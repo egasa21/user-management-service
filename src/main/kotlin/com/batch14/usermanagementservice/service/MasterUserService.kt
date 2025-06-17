@@ -7,7 +7,6 @@ import com.batch14.usermanagementservice.domain.dto.response.ResGetUserDto
 import com.batch14.usermanagementservice.domain.dto.response.ResLoginDto
 
 
-
 interface MasterUserService {
     fun findAllActiveUsers(): List<ResGetUserDto>
     fun findUserById(id: Int): ResGetUserDto?
@@ -15,6 +14,6 @@ interface MasterUserService {
     fun register(req: ReqRegisterDto): ResGetUserDto
     fun login(req: ReqLoginDto): ResLoginDto
     fun updateUser(req: ReqUpdateUserDto, userId: Int): ResGetUserDto
-    fun hardDeleteUser(userId: Int)
-    fun softDeleteUser(userId: Int)
+    fun hardDeleteUser(userId: Int, performerId: Int)
+    fun softDeleteUser(userId: Int, performerId: Int)
 }

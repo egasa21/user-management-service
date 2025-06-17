@@ -171,7 +171,7 @@ class MasterUserServiceImpl(
         userId: Int
     ): ResGetUserDto {
 //        val userId = httpServletRequest.getHeader(Constant.HEADER_USER_ID)
-        val user = masterUserRepository.findById(userId).orElseThrow {
+        val user = masterUserRepository.findByIdAndNotDeleted(userId).orElseThrow {
             throw CustomException(
                 "User not found",
                 HttpStatus.BAD_REQUEST.value()
@@ -213,7 +213,28 @@ class MasterUserServiceImpl(
 
     }
 
-    override fun hardDeleteUser(userId: Int) {
+    override fun hardDeleteUser(userId: Int, performerId: Int) {
+        val performer = masterUserRepository.findUserWithRolesById(performerId).orElseThrow {
+            throw CustomException(
+                "Performer not found",
+                HttpStatus.NOT_FOUND.value()
+            )
+        }
+
+        if (performer.role?.name != "admin") {
+            throw CustomException(
+                "Only administrators can perform hard delete",
+                HttpStatus.FORBIDDEN.value()
+            )
+        }
+
+        if (userId == performerId) {
+            throw CustomException(
+                "You cannot hard delete yourself",
+                HttpStatus.FORBIDDEN.value()
+            )
+        }
+
         val user = masterUserRepository.findById(userId).orElseThrow {
             throw CustomException(
                 "User not found",
@@ -224,8 +245,16 @@ class MasterUserServiceImpl(
         masterUserRepository.delete(user)
     }
 
-    override fun softDeleteUser(userId: Int) {
-        val user = masterUserRepository.findById(userId).orElseThrow {
+    override fun softDeleteUser(userId: Int, performerId: Int) {
+
+        if (userId == performerId) {
+            throw CustomException(
+                "You cannot soft delete yourself",
+                HttpStatus.FORBIDDEN.value()
+            )
+        }
+
+        val user = masterUserRepository.findByIdAndNotDeleted(userId).orElseThrow {
             throw CustomException(
                 "User not found",
                 HttpStatus.BAD_REQUEST.value()
@@ -234,7 +263,7 @@ class MasterUserServiceImpl(
 
         user.isDelete = true
         user.deletedAt = Timestamp(System.currentTimeMillis())
-        user.deletedBy = userId.toString()
+        user.deletedBy = performerId.toString()
 
         masterUserRepository.save(user)
 

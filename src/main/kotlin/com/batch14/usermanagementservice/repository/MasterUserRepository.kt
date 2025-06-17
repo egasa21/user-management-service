@@ -17,12 +17,20 @@ interface MasterUserRepository : JpaRepository<MasterUserEntity, Int> {
 
     @Query(
         """
-            SELECT U FROM MasterUserEntity U
-            WHERE U.id = :id
-            AND U.isDelete = false
+            SELECT DISTINCT u FROM MasterUserEntity u 
+            LEFT JOIN FETCH u.role r 
+            WHERE u.id = :id 
+            AND u.isDelete = false
+        """, nativeQuery = false
+    )
+    fun findByIdAndNotDeleted(id: Int): Optional<MasterUserEntity>
+
+    @Query(
+        """
+            
         """
     )
-    fun findByIdAndNotDeleted(user: Int): Optional<MasterUserEntity>
+    fun findUserWithRolesById(id: Int): Optional<MasterUserEntity>
     fun findFirstByEmail(email: String): MasterUserEntity?
     fun findFirstByUsername(username: String): Optional<MasterUserEntity?>
 

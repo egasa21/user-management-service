@@ -90,7 +90,8 @@ class UserController(
     fun hardDeleteUser(
         @PathVariable id: Int
     ): ResponseEntity<BaseResponse<String>> {
-        masterUserService.hardDeleteUser(id)
+        val performerId = httpServletRequest.getHeader(Constant.HEADER_USER_ID).toInt()
+        masterUserService.hardDeleteUser(id, performerId)
         return ResponseEntity(
             BaseResponse(
                 message = "User deleted successfully"
@@ -103,7 +104,8 @@ class UserController(
     fun softDeleteUser(
         @PathVariable id: Int
     ): ResponseEntity<BaseResponse<String>> {
-        masterUserService.softDeleteUser(id)
+        val performerId = httpServletRequest.getHeader(Constant.HEADER_USER_ID).toInt()
+        masterUserService.softDeleteUser(id, performerId)
         return ResponseEntity(
             BaseResponse(
                 message = "User soft deleted successfully"
