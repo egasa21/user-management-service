@@ -15,6 +15,8 @@ import com.batch14.usermanagementservice.service.MasterUserService
 import com.batch14.usermanagementservice.utils.BCryptUtil
 import com.batch14.usermanagementservice.utils.JwtUtil
 import jakarta.servlet.http.HttpServletRequest
+import org.springframework.cache.annotation.CacheEvict
+import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import java.util.Optional
@@ -49,6 +51,12 @@ class MasterUserServiceImpl(
         return result
     }
 
+    //    kalo belum ada data di redis bakal disimpan
+//    kalo sudah ada akan update
+    @Cacheable(
+        "getUserById",
+        key = "{#id}"
+    )
     override fun findUserById(id: Int): ResGetUserDto? {
         val rawData = masterUserRepository.findById(id)
         return rawData.map { user ->
@@ -61,6 +69,7 @@ class MasterUserServiceImpl(
             )
         }.orElse(null)
     }
+
 
     override fun findUserByIds(ids: List<Int>): List<ResGetUserDto> {
         val rawData = masterUserRepository.findAllByIds(ids)
@@ -151,10 +160,17 @@ class MasterUserServiceImpl(
 
     }
 
-    override fun updateUser(req: ReqUpdateUserDto): ResGetUserDto {
-        val userId = httpServletRequest.getHeader(Constant.HEADER_USER_ID)
-        print("ini user id"+userId)
-        val user = masterUserRepository.findById(userId.toInt()).orElseThrow {
+
+    @CacheEvict(
+        value = ["getUserById"],
+        key = "{#userId}"
+    )
+    override fun updateUser(
+        req: ReqUpdateUserDto,
+        userId: Int
+    ): ResGetUserDto {
+//        val userId = httpServletRequest.getHeader(Constant.HEADER_USER_ID)
+        val user = masterUserRepository.findById(userId).orElseThrow {
             throw CustomException(
                 "User not found",
                 HttpStatus.BAD_REQUEST.value()
@@ -182,7 +198,7 @@ class MasterUserServiceImpl(
 
         user.email = req.email
         user.username = req.username
-        user.updatedBy = userId
+        user.updatedBy = userId.toString()
 
         val result = masterUserRepository.save(user)
         return ResGetUserDto(
