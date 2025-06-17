@@ -2,6 +2,7 @@ package com.batch14.usermanagementservice.utils
 
 import com.batch14.usermanagementservice.domain.Constant
 import com.batch14.usermanagementservice.exception.CustomException
+import io.jsonwebtoken.Claims
 import io.jsonwebtoken.JwtException
 
 import io.jsonwebtoken.Jwts
@@ -35,6 +36,18 @@ class JwtUtil {
 
         } catch (e: JwtException) {
             throw CustomException("Internal server error", 500, Constant.STATUS_ERROR)
+        }
+    }
+
+    fun decode(token: String): Claims {
+        return try {
+            Jwts.parserBuilder()
+                .setSigningKey(SECRET_KEY.toByteArray())
+                .build()
+                .parseClaimsJws(token)
+                .body
+        } catch (e: JwtException) {
+            throw CustomException("Invalid Token", 401, Constant.STATUS_FAILED)
         }
     }
 }

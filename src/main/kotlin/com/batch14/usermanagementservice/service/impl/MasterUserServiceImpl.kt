@@ -1,7 +1,9 @@
 package com.batch14.usermanagementservice.service.impl
 
+import com.batch14.usermanagementservice.domain.Constant
 import com.batch14.usermanagementservice.domain.dto.request.ReqLoginDto
 import com.batch14.usermanagementservice.domain.dto.request.ReqRegisterDto
+import com.batch14.usermanagementservice.domain.dto.request.ReqUpdateUserDto
 import com.batch14.usermanagementservice.domain.dto.response.ResGetUserDto
 import com.batch14.usermanagementservice.domain.dto.response.ResLoginDto
 import com.batch14.usermanagementservice.domain.entity.MasterUserEntity
@@ -12,6 +14,8 @@ import com.batch14.usermanagementservice.service.MasterRoleService
 import com.batch14.usermanagementservice.service.MasterUserService
 import com.batch14.usermanagementservice.utils.BCryptUtil
 import com.batch14.usermanagementservice.utils.JwtUtil
+import jakarta.servlet.http.HttpServletRequest
+import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
 import java.util.Optional
 
@@ -21,7 +25,8 @@ class MasterUserServiceImpl(
     private val masterRoleService: MasterRoleService,
     private val masterRoleRepository: MasterRoleRepository,
     private val bcrypt: BCryptUtil,
-    private val jwtUtil: JwtUtil
+    private val jwtUtil: JwtUtil,
+    private val httpServletRequest: HttpServletRequest
 ) : MasterUserService {
     override fun findAllActiveUsers(): List<ResGetUserDto> {
         val rawData = masterUserRepository.findAllActiveRoles()
@@ -57,6 +62,23 @@ class MasterUserServiceImpl(
         }.orElse(null)
     }
 
+    override fun findUserByIds(ids: List<Int>): List<ResGetUserDto> {
+        val rawData = masterUserRepository.findAllByIds(ids)
+        val result = mutableListOf<ResGetUserDto>()
+        rawData.forEach { u ->
+            result.add(
+                ResGetUserDto(
+                    username = u.username,
+                    id = u.id,
+                    email = u.email,
+                    roleId = u.role?.id,
+                    roleName = u.role?.name,
+                )
+            )
+        }
+        return result
+    }
+
     override fun register(req: ReqRegisterDto): ResGetUserDto {
 
         val role = if (req.roleId == null) {
@@ -88,10 +110,11 @@ class MasterUserServiceImpl(
             )
         }
 
+        val hashPw = bcrypt.hash(req.password)
 
         val userRow = MasterUserEntity(
             email = req.email,
-            password = req.password,
+            password = hashPw,
             username = req.username,
             role = if (role.isPresent) role.get() else null
         )
@@ -125,6 +148,51 @@ class MasterUserServiceImpl(
         return ResLoginDto(
             token = token
         )
+
+    }
+
+    override fun updateUser(req: ReqUpdateUserDto): ResGetUserDto {
+        val userId = httpServletRequest.getHeader(Constant.HEADER_USER_ID)
+        print("ini user id"+userId)
+        val user = masterUserRepository.findById(userId.toInt()).orElseThrow {
+            throw CustomException(
+                "User not found",
+                HttpStatus.BAD_REQUEST.value()
+            )
+        }
+
+        val existingUser = masterUserRepository.findFirstByUsername(req.username)
+        if (existingUser.isPresent) {
+            if (existingUser.get().id != user.id) {
+                throw CustomException(
+                    "username telah terdaftar",
+                    HttpStatus.BAD_REQUEST.value()
+                )
+            }
+        }
+
+        val existingUserEmail = masterUserRepository.findFirstByEmail(req.email)
+        if (existingUserEmail != null && existingUserEmail.id != user.id) {
+            throw CustomException(
+                "username telah terdaftar",
+                HttpStatus.BAD_REQUEST.value()
+            )
+
+        }
+
+        user.email = req.email
+        user.username = req.username
+        user.updatedBy = userId
+
+        val result = masterUserRepository.save(user)
+        return ResGetUserDto(
+            id = result.id,
+            username = result.username,
+            email = result.email,
+            roleId = result.role?.id,
+            roleName = result.role?.name
+        )
+
 
     }
 }
