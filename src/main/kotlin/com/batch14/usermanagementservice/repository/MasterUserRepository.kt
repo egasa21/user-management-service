@@ -14,6 +14,15 @@ interface MasterUserRepository : JpaRepository<MasterUserEntity, Int> {
         """, nativeQuery = false
     )
     fun findAllActiveRoles(): List<MasterUserEntity>
+
+    @Query(
+        """
+            SELECT U FROM MasterUserEntity U
+            WHERE U.id = :id
+            AND U.isDelete = false
+        """
+    )
+    fun findByIdAndNotDeleted(user: Int): Optional<MasterUserEntity>
     fun findFirstByEmail(email: String): MasterUserEntity?
     fun findFirstByUsername(username: String): Optional<MasterUserEntity?>
 

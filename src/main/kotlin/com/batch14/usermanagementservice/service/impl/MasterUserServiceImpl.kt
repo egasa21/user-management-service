@@ -19,6 +19,7 @@ import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Service
+import java.sql.Timestamp
 import java.util.Optional
 
 @Service
@@ -52,13 +53,13 @@ class MasterUserServiceImpl(
     }
 
     //    kalo belum ada data di redis bakal disimpan
-//    kalo sudah ada akan update
+    //    kalo sudah ada akan update
     @Cacheable(
         "getUserById",
         key = "{#id}"
     )
     override fun findUserById(id: Int): ResGetUserDto? {
-        val rawData = masterUserRepository.findById(id)
+        val rawData = masterUserRepository.findByIdAndNotDeleted(id)
         return rawData.map { user ->
             ResGetUserDto(
                 id = user.id,
@@ -209,6 +210,33 @@ class MasterUserServiceImpl(
             roleName = result.role?.name
         )
 
+
+    }
+
+    override fun hardDeleteUser(userId: Int) {
+        val user = masterUserRepository.findById(userId).orElseThrow {
+            throw CustomException(
+                "User not found",
+                HttpStatus.BAD_REQUEST.value()
+            )
+        }
+
+        masterUserRepository.delete(user)
+    }
+
+    override fun softDeleteUser(userId: Int) {
+        val user = masterUserRepository.findById(userId).orElseThrow {
+            throw CustomException(
+                "User not found",
+                HttpStatus.BAD_REQUEST.value()
+            )
+        }
+
+        user.isDelete = true
+        user.deletedAt = Timestamp(System.currentTimeMillis())
+        user.deletedBy = userId.toString()
+
+        masterUserRepository.save(user)
 
     }
 }

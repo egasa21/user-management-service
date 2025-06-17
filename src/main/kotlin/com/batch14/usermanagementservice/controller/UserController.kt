@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -80,6 +81,32 @@ class UserController(
         return ResponseEntity(
             BaseResponse(
                 data = masterUserService.updateUser(req, userId.toInt()),
+            ),
+            HttpStatus.OK
+        )
+    }
+
+    @DeleteMapping("/{id}/hard-delete")
+    fun hardDeleteUser(
+        @PathVariable id: Int
+    ): ResponseEntity<BaseResponse<String>> {
+        masterUserService.hardDeleteUser(id)
+        return ResponseEntity(
+            BaseResponse(
+                message = "User deleted successfully"
+            ),
+            HttpStatus.OK
+        )
+    }
+
+    @DeleteMapping("/{id}/soft-delete")
+    fun softDeleteUser(
+        @PathVariable id: Int
+    ): ResponseEntity<BaseResponse<String>> {
+        masterUserService.softDeleteUser(id)
+        return ResponseEntity(
+            BaseResponse(
+                message = "User soft deleted successfully"
             ),
             HttpStatus.OK
         )
