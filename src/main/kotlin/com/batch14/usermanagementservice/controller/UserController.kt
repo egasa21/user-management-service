@@ -4,9 +4,11 @@ import com.batch14.usermanagementservice.domain.Constant
 import com.batch14.usermanagementservice.domain.dto.request.ReqLoginDto
 import com.batch14.usermanagementservice.domain.dto.request.ReqRegisterDto
 import com.batch14.usermanagementservice.domain.dto.request.ReqUpdateUserDto
+import com.batch14.usermanagementservice.domain.dto.request.ReqVerifyOtpDto
 import com.batch14.usermanagementservice.domain.dto.response.BaseResponse
 import com.batch14.usermanagementservice.domain.dto.response.ResGetUserDto
 import com.batch14.usermanagementservice.domain.dto.response.ResLoginDto
+import com.batch14.usermanagementservice.domain.dto.response.ResRegisterDto
 import com.batch14.usermanagementservice.service.MasterUserService
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
@@ -51,7 +53,7 @@ class UserController(
     @PostMapping("/register")
     fun registerUser(
         @Valid @RequestBody req: ReqRegisterDto
-    ): ResponseEntity<BaseResponse<ResGetUserDto>> {
+    ): ResponseEntity<BaseResponse<ResRegisterDto>> {
         return ResponseEntity(
             BaseResponse(
                 data = masterUserService.register(req)
@@ -68,6 +70,19 @@ class UserController(
             BaseResponse(
                 data = masterUserService.login(req),
                 message = "Login successful"
+            ),
+            HttpStatus.OK
+        )
+    }
+
+    @PostMapping("/verify-otp")
+    fun verifyOtp(
+        @RequestBody req: ReqVerifyOtpDto
+    ): ResponseEntity<BaseResponse<String>> {
+        masterUserService.verifyOtp(req)
+        return ResponseEntity(
+            BaseResponse(
+                message = "OTP verified successfully"
             ),
             HttpStatus.OK
         )
